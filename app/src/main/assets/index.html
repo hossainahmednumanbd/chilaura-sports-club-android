@@ -538,7 +538,7 @@ function renderPayment(){
 }
 function editPayment(){
  if(!ses.staff())return;
- const screen=el('screen');screen.innerHTML='<h2>বিকাশ অনুদান সেটিংস</h2><p class="muted">ক্লাবের অনুমোদিত বিকাশ নম্বর দিন। টাকা পাঠানোর আগে প্রাপক ও লেনদেনের ধরন যাচাই করতে বলুন।</p><form id="bkashForm"><label>বিকাশ নম্বর<input name="number" type="tel" inputmode="numeric" pattern="01[0-9]{9}" maxlength="11" required></label><button class="btn">অনলাইনে সংরক্ষণ</button><button class="btn alt" type="button" onclick="show('donations')">বাতিল</button></form><p id="bkashError" class="warning" hidden></p>';
+ const screen=el('screen');screen.innerHTML='<h2>বিকাশ অনুদান সেটিংস</h2><p class="muted">ক্লাবের অনুমোদিত বিকাশ নম্বর দিন। টাকা পাঠানোর আগে প্রাপক ও লেনদেনের ধরন যাচাই করতে বলুন।</p><form id="bkashForm"><label>বিকাশ নম্বর<input name="number" type="tel" inputmode="numeric" pattern="01[0-9]{9}" maxlength="11" required></label><button class="btn">অনলাইনে সংরক্ষণ</button><button class="btn alt" type="button" onclick="show(&quot;donations&quot;)">বাতিল</button></form><p id="bkashError" class="warning" hidden></p>';
  const f=el('bkashForm');f.elements.number.value=paymentSettings?.payload?.number||'';
  f.onsubmit=async e=>{e.preventDefault();const n=f.elements.number.value.trim();if(!/^01[0-9]{9}$/.test(n))return alert('১১ সংখ্যার সঠিক বাংলাদেশি মোবাইল নম্বর লিখুন');
  const b=f.querySelector('button');b.disabled=true;
