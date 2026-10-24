@@ -159,4 +159,73 @@ window.donationForm=function(id){
 const previousDraw=draw;draw=function(){previousDraw();if(page==='donations')donationHome()};
 draw();updateNav();
 })();
+</script><style>
+.news-highlight{margin:0 0 20px}.news-highlight h2{font-size:19px;margin:4px 0 12px}.news-highlight .headline-card{display:flex;gap:12px;align-items:center;background:white;border:1px solid #dce8df;border-radius:14px;padding:11px;margin-bottom:9px;cursor:pointer}.news-highlight .headline-card img{width:76px;height:66px;border-radius:10px;object-fit:cover;background:#e2efe7;flex-shrink:0}.news-highlight .headline-card b{display:block;font-size:15px;line-height:1.4}.news-highlight .headline-card small{color:#64806e}.news-badge{display:inline-block;border-radius:20px;background:#d8f2e1;color:#08633f;padding:3px 9px;font-size:11px;font-weight:700}.notice-filter{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px}.notice-filter button{background:white;border:1px solid #d4e6db;border-radius:18px;padding:8px 12px;white-space:nowrap;font-size:13px}.notice-filter button.active{background:#087244;color:#fff}.notice-row{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid #e7eee9;cursor:pointer}.notice-row:last-child{border-bottom:0}.notice-row img{width:60px;height:60px;object-fit:cover;border-radius:12px;background:#e5f2e9;flex-shrink:0}.notice-row .info{flex:1;min-width:0}.notice-row b{display:block;line-height:1.45}.notice-row small{color:#698170;display:block;margin-top:5px}.notice-row .arrow{font-size:22px;color:#327d53}.notice-hero{width:100%;max-height:300px;object-fit:cover;border-radius:14px;margin:12px 0}.notice-detail{white-space:pre-wrap;line-height:1.8;overflow-wrap:anywhere}.notice-editor label{display:block;margin:11px 0;font-weight:600;font-size:14px}.notice-editor select{width:100%;padding:11px;border:1px solid #c5d7cb;border-radius:9px;background:#fff;font:inherit}.notice-editor input[type=checkbox]{width:auto}.notice-emoji{width:60px;height:60px;border-radius:12px;background:#e3f3e9;display:grid;place-items:center;font-size:29px;flex-shrink:0}
+</style>
+<script>
+(function(){
+const types=[['notice','নোটিশ'],['news','সংবাদ'],['event','ইভেন্ট'],['urgent','জরুরি ঘোষণা']];
+let currentType='all';
+const safeNotice=escapeHTML;
+const validPhoto=x=>x.photo&&/^data:image\/(jpeg|png|webp);base64,/.test(x.photo)?x.photo:null;
+function dateText(x){return x.date||''}
+function sorted(){return [...(records.notices||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||Number(b.id)-Number(a.id))}
+function categoryName(x){return (types.find(t=>t[0]===(x.type||'notice'))||types[0])[1]}
+function noticeRow(x,compact=false){
+ const img=validPhoto(x);
+ return '<div class="'+(compact?'headline-card':'notice-row')+'" onclick="noticeDetail('+JSON.stringify(x.id)+')">'+(img?'<img src="'+img+'" alt="">':compact?'<div class="notice-emoji">📢</div>':'<div class="notice-emoji">📢</div>')+'<div class="info" style="flex:1;min-width:0"><b>'+safeNotice(x.title)+'</b><small>'+safeNotice(categoryName(x))+' • '+safeNotice(dateText(x))+'</small></div>'+(compact?'':'<span class="arrow">›</span>')+'</div>';
+}
+function noticeBoard(){
+ const s=el('screen');
+ s.innerHTML='<div class="section-head"><h2>নোটিশ ও সংবাদ</h2><span class="subtle">'+sorted().length+'টি</span></div><div class="notice-filter" id="noticeFilters"><button data-type="all" onclick="noticeType(\'all\')">সকল</button>'+types.map(t=>'<button data-type="'+t[0]+'" onclick="noticeType(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div><input id="noticeSearch" placeholder="শিরোনাম বা সংবাদ খুঁজুন" oninput="renderNotices()"><button class="btn" onclick="noticeEditor(null)">+ সংবাদ / নোটিশ প্রকাশ</button><div class="card" id="noticeItems"></div>';
+ renderNotices();
+}
+window.noticeType=function(t){currentType=t;renderNotices()};
+window.renderNotices=function(){
+ const q=(el('noticeSearch')?.value||'').trim().toLowerCase();
+ document.querySelectorAll('#noticeFilters button').forEach(b=>b.classList.toggle('active',b.dataset.type===currentType));
+ const items=sorted().filter(x=>(currentType==='all'||(x.type||'notice')===currentType)&&[x.title,x.detail].join(' ').toLowerCase().includes(q));
+ el('noticeItems').innerHTML=items.length?items.map(x=>noticeRow(x)).join(''):'<p class="muted">এখনো কোনো সংবাদ বা নোটিশ নেই।</p>';
+};
+window.noticeDetail=function(id){
+ const x=records.notices.find(v=>String(v.id)===String(id));if(!x)return show('notices');
+ const img=validPhoto(x);
+ el('screen').innerHTML='<button class="btn alt" onclick="show(\'notices\')">← নোটিশ বোর্ড</button><div class="card"><span class="news-badge">'+safeNotice(categoryName(x))+'</span><h2>'+safeNotice(x.title)+'</h2><p class="muted">'+safeNotice(dateText(x))+'</p>'+(img?'<img class="notice-hero" src="'+img+'" alt="সংবাদের ছবি">':'')+'<div class="notice-detail">'+safeNotice(x.detail||'বিস্তারিত দেওয়া হয়নি।')+'</div>'+(x.featured?'<p class="news-badge">হোমপেজে গুরুত্বপূর্ণ সংবাদ</p>':'')+'</div><button class="btn alt" onclick="noticeEditor('+JSON.stringify(x.id)+')">সম্পাদনা</button><button class="btn red" onclick="noticeDelete('+JSON.stringify(x.id)+')">মুছুন</button><p class="small-note">ডেমো: অ্যাডমিন অনুমতি ব্যবস্থা এখনো চালু হয়নি।</p>';
+ window.scrollTo(0,0);
+};
+window.noticeDelete=function(id){if(!confirm('সংবাদটি মুছে ফেলবেন?'))return;records.notices=records.notices.filter(x=>String(x.id)!==String(id));save();show('notices')};
+function resizeNotice(file){return new Promise((resolve,reject)=>{
+ if(!file){resolve(null);return}if(!['image/jpeg','image/png','image/webp'].includes(file.type)){reject(Error('JPG, PNG বা WebP ছবি নির্বাচন করুন'));return}
+ const reader=new FileReader();reader.onerror=()=>reject(Error('ছবি পড়া যায়নি'));reader.onload=()=>{
+ const im=new Image();im.onerror=()=>reject(Error('ছবি খোলা যায়নি'));im.onload=()=>{
+ const max=850,scale=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*scale);c.height=Math.round(im.height*scale);
+ c.getContext('2d').drawImage(im,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.68))
+ };im.src=reader.result};reader.readAsDataURL(file);
+})}
+window.noticeEditor=function(id){
+ const x=records.notices.find(v=>String(v.id)===String(id))||{};
+ const today=new Date().toISOString().slice(0,10);
+ el('screen').innerHTML='<h2>'+(id?'সংবাদ / নোটিশ সম্পাদনা':'নতুন সংবাদ / নোটিশ')+'</h2><form id="noticeForm" class="notice-editor"><label>শিরোনাম *<input name="title" required maxlength="160" value="'+safeNotice(x.title||'')+'"></label><label>ধরন<select name="type">'+types.map(t=>'<option value="'+t[0]+'">'+t[1]+'</option>').join('')+'</select></label><label>প্রকাশের তারিখ<input name="date" type="date" value="'+safeNotice(x.date||today)+'"></label><label>সংবাদের ছবি (ঐচ্ছিক)<input name="photo" type="file" accept="image/jpeg,image/png,image/webp"></label><label>বিস্তারিত<textarea name="detail" rows="8">'+safeNotice(x.detail||'')+'</textarea></label><label><input type="checkbox" name="featured"> হোমপেজে গুরুত্বপূর্ণ সংবাদ হিসেবে দেখান (সর্বোচ্চ ৩টি)</label><button class="btn" type="submit">প্রকাশ / সংরক্ষণ</button><button class="btn alt" type="button" onclick="show(\'notices\')">বাতিল</button></form><p class="small-note">এই সংস্করণে প্রকাশিত তথ্য শুধু এই ফোনে দেখা যাবে।</p>';
+ const f=el('noticeForm');f.elements.type.value=x.type||'notice';f.elements.featured.checked=!!x.featured;
+ f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('[type=submit]');b.disabled=true;
+ try{
+ const d=new FormData(f),title=String(d.get('title')||'').trim();if(!title){alert('শিরোনাম লিখুন');return}
+ const photo=(await resizeNotice(f.elements.photo.files[0]))||x.photo||'';
+ const item={id:id||Date.now(),title,type:String(d.get('type')||'notice'),date:String(d.get('date')||''),detail:String(d.get('detail')||''),featured:d.has('featured'),photo};
+ if(id)Object.assign(records.notices.find(v=>String(v.id)===String(id)),item);else records.notices.unshift(item);
+ save();show('notices');
+ }catch(err){alert('সংরক্ষণ করা যায়নি: '+err.message)}finally{b.disabled=false}
+ };
+ window.scrollTo(0,0);
+};
+function highlightHome(){
+ const s=el('screen'),featured=sorted().filter(x=>x.featured).slice(0,3);
+ const section=document.createElement('section');section.className='news-highlight';
+ section.innerHTML='<div class="section-head"><h2>📌 গুরুত্বপূর্ণ সংবাদ ও ঘোষণা</h2><button class="btn alt" onclick="show(\'notices\')">সব দেখুন</button></div>'+(featured.length?featured.map(x=>noticeRow(x,true)).join(''):'<div class="card"><p class="muted">এখানে সর্বোচ্চ তিনটি গুরুত্বপূর্ণ সংবাদ বা ঘোষণা প্রকাশ করা যাবে।</p><button class="btn" onclick="noticeEditor(null)">+ প্রথম সংবাদ প্রকাশ করুন</button></div>');
+ s.insertBefore(section,s.firstChild);
+}
+const oldDraw=draw;
+draw=function(){oldDraw();if(page==='notices')noticeBoard();if(page==='home')highlightHome()};
+draw();updateNav();
+})();
 </script></body></html>
