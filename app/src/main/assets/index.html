@@ -329,7 +329,7 @@ financeEdit=function(id,kind){
  if(!payload.title||!payload.entry_date)throw Error('শিরোনাম ও তারিখ দিন');
  if(id){await request('/rest/v1/club_finances?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify(payload)})}
  else{payload.created_by=authUserId;await request('/rest/v1/club_finances',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify(payload)})}
- await loadFinance();financeDate=payload.entry_date.slice(0,7);financePeriod='month';show('accounts');
+ await loadFinance();show('accounts');
  }catch(err){alert('অনলাইন হিসাব সংরক্ষণ হয়নি: '+err.message)}finally{b.disabled=false}
  };
 };
