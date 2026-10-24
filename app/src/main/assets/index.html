@@ -511,4 +511,47 @@ show=function(k){if(k==='settings'&&!S.staff())return show('admin');oldShow(k);i
 const oldDraw=draw;
 draw=function(){oldDraw();if(sections.includes(page))patch(page)};
 })();
+</script><style>.bkash-card{background:#fff;border:1px solid #f4bad4;border-radius:17px;padding:17px;margin:13px 0}.bkash-card h3{color:#d10a65;margin:0 0 9px}.bkash-number{font-size:23px;font-weight:800;letter-spacing:.7px;color:#a20b53}.bkash-actions{display:flex;gap:8px;flex-wrap:wrap}.bkash-actions button{background:#d10a65;color:white;border:0;border-radius:9px;padding:10px 12px}.bkash-actions .secondary{background:#fbe5ee;color:#9c1552}</style>
+<script>
+(function(){
+const ses=window.clubSession;
+let paymentSettings=null;
+async function loadPayment(){
+ try{const a=await ses.request('/rest/v1/club_content?section=eq.settings&select=id,payload&limit=100');paymentSettings=(a||[]).find(x=>x.payload&&x.payload.key==='bkash')||null}catch(e){paymentSettings=null}
+ if(page==='donations')renderPayment();
+}
+function renderPayment(){
+ const screen=el('screen');if(!screen)return;
+ const old=el('bkashDonation');if(old)old.remove();
+ const card=document.createElement('div');card.id='bkashDonation';card.className='bkash-card';
+ const heading=document.createElement('h3');heading.textContent='💗 বিকাশে অনুদান পাঠান';card.appendChild(heading);
+ const number=String(paymentSettings?.payload?.number||'').replace(/[^0-9]/g,'');
+ if(number){
+ const n=document.createElement('p');n.className='bkash-number';n.textContent=number;card.appendChild(n);
+ const note=document.createElement('p');note.className='muted';note.textContent='বিকাশ অ্যাপে Send Money/Payment-এর সঠিক পদ্ধতি ও প্রাপক যাচাই করে অনুদান পাঠান। অ্যাপটি স্বয়ংক্রিয়ভাবে পেমেন্ট যাচাই করে না।';card.appendChild(note);
+ const actions=document.createElement('div');actions.className='bkash-actions';
+ const copy=document.createElement('button');copy.textContent='নম্বর কপি';copy.onclick=()=>{const field=document.createElement('textarea');field.value=number;document.body.appendChild(field);field.select();try{document.execCommand('copy');alert('নম্বর কপি হয়েছে')}catch(e){alert('নম্বর: '+number)}field.remove()};actions.appendChild(copy);
+ const dial=document.createElement('button');dial.className='secondary';dial.textContent='বিকাশ ডায়াল *247#';dial.onclick=()=>{location.href='tel:*247%23'};actions.appendChild(dial);card.appendChild(actions);
+ }else{const msg=document.createElement('p');msg.className='muted';msg.textContent='ক্লাবের বিকাশ নম্বর এখনো যুক্ত করা হয়নি।';card.appendChild(msg)}
+ if(ses.staff()){const edit=document.createElement('button');edit.className='btn alt';edit.textContent='বিকাশ নম্বর পরিবর্তন';edit.onclick=editPayment;card.appendChild(edit)}
+ screen.insertBefore(card,screen.firstChild);
+}
+function editPayment(){
+ if(!ses.staff())return;
+ const screen=el('screen');screen.innerHTML='<h2>বিকাশ অনুদান সেটিংস</h2><p class="muted">ক্লাবের অনুমোদিত বিকাশ নম্বর দিন। টাকা পাঠানোর আগে প্রাপক ও লেনদেনের ধরন যাচাই করতে বলুন।</p><form id="bkashForm"><label>বিকাশ নম্বর<input name="number" type="tel" inputmode="numeric" pattern="01[0-9]{9}" maxlength="11" required></label><button class="btn">অনলাইনে সংরক্ষণ</button><button class="btn alt" type="button" onclick="show('donations')">বাতিল</button></form><p id="bkashError" class="warning" hidden></p>';
+ const f=el('bkashForm');f.elements.number.value=paymentSettings?.payload?.number||'';
+ f.onsubmit=async e=>{e.preventDefault();const n=f.elements.number.value.trim();if(!/^01[0-9]{9}$/.test(n))return alert('১১ সংখ্যার সঠিক বাংলাদেশি মোবাইল নম্বর লিখুন');
+ const b=f.querySelector('button');b.disabled=true;
+ try{const payload={key:'bkash',number:n};if(paymentSettings){await ses.request('/rest/v1/club_content?id=eq.'+paymentSettings.id,{method:'PATCH',body:JSON.stringify({payload}),headers:{Prefer:'return=minimal'}})}else{await ses.request('/rest/v1/club_content',{method:'POST',body:JSON.stringify({section:'settings',payload}),headers:{Prefer:'return=minimal'}})}await loadPayment();show('donations')}
+ catch(err){el('bkashError').hidden=false;el('bkashError').textContent='সংরক্ষণ হয়নি: '+err.message}finally{b.disabled=false}
+ };
+}
+const oldShow=show;
+show=function(k){oldShow(k);if(k==='donations')renderPayment()};
+const oldDraw=draw;
+draw=function(){oldDraw();if(page==='donations')renderPayment()};
+const oldRefresh=window.clubRefresh;
+window.clubRefresh=async function(){await oldRefresh();await loadPayment()};
+loadPayment();
+})();
 </script></body></html>
