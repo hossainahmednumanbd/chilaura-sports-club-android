@@ -14,11 +14,32 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Inspect Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls -la "$ANDROID_HOME/platforms" || true
+          ls -la "$ANDROID_HOME/build-tools" || true
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Build debug APK
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+      - name: Build debug APK with diagnostics
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle :app:assembleDebug --no-daemon --stacktrace --console=plain 2>&1 | tee build-log.txt
+      - name: Show failure details
+        if: failure()
+        run: |
+          echo '### Gradle error summary' >> "$GITHUB_STEP_SUMMARY"
+          echo '\`\`\`text' >> "$GITHUB_STEP_SUMMARY"
+          grep -A 18 -B 5 -E 'FAILURE:|What went wrong:|Execution failed|Could not resolve|SDK location not found|error:' build-log.txt | tail -n 150 >> "$GITHUB_STEP_SUMMARY" || true
+          echo '\`\`\`' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-build-log
+          path: build-log.txt
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         if: success()
         with:
