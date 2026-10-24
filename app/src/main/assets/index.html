@@ -228,4 +228,50 @@ const oldDraw=draw;
 draw=function(){oldDraw();if(page==='notices')noticeBoard();if(page==='home')highlightHome()};
 draw();updateNav();
 })();
+</script><style>
+.finance-bar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.finance-bar button,.finance-bar select{padding:9px;border:1px solid #cde0d3;border-radius:10px;background:white;font:inherit;color:#164e31}.finance-bar button.selected{background:#08643f;color:white}.finance-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.finance-card{background:white;border:1px solid #d7e6dc;border-radius:14px;padding:13px}.finance-card small{display:block;color:#587665}.finance-card b{font-size:19px;display:block;margin-top:7px}.finance-card.net{grid-column:1/-1;background:#e7f3ea}.finance-card.negative b{color:#ac3333}.finance-entry{border-bottom:1px solid #e3eee6;padding:12px 0;display:flex;gap:10px;align-items:center}.finance-entry .detail{flex:1;min-width:0}.finance-entry small{display:block;color:#66806d;margin-top:4px}.finance-entry strong{white-space:nowrap}.finance-entry .out{color:#b23838}.finance-entry .in{color:#087244}.finance-form label{display:block;font-size:14px;font-weight:600;margin:12px 0}.finance-form select{width:100%;padding:11px;border:1px solid #c5d7cb;border-radius:8px;background:white;font:inherit}.finance-table{width:100%;border-collapse:collapse;font-size:13px}.finance-table th,.finance-table td{border-bottom:1px solid #dce9df;padding:9px 4px;text-align:right}.finance-table th:first-child,.finance-table td:first-child{text-align:left}.finance-private{background:#fff1d4;color:#765012;padding:12px;border-radius:12px;font-size:13px;margin:12px 0}
+</style>
+<script>
+(function(){
+const incomeCats=['সদস্য চাঁদা','অনুদান','স্পন্সরশিপ','ইভেন্ট আয়','ব্যাংক মুনাফা','অন্যান্য আয়'];
+const expenseCats=['খেলাধুলা ও সরঞ্জাম','টুর্নামেন্ট আয়োজন','সামাজিক সহায়তা','শিক্ষা ও প্রশিক্ষণ','যাতায়াত','অফিস ও প্রশাসন','আপ্যায়ন','অন্যান্য ব্যয়'];
+let financePeriod='month',financeDate=new Date().toISOString().slice(0,7),financeQuery='';
+const esc=escapeHTML,fmt=n=>Number(n||0).toLocaleString('bn-BD',{minimumFractionDigits:0,maximumFractionDigits:2});
+const ledger=()=>records.accounts||[];
+const normalized=x=>({id:x.id,title:x.title||'',detail:x.detail||'',amount:Number(x.amount)||0,type:x.type||'expense',category:x.category||'অন্যান্য ব্যয়',date:x.date||'',method:x.method||'',reference:x.reference||'',payee:x.payee||''});
+const periodMatch=x=>financePeriod==='year'?x.date.startsWith(financeDate.slice(0,4)):x.date.startsWith(financeDate);
+function calc(rows){return rows.reduce((a,x)=>{a[x.type==='income'?'income':'expense']+=Number(x.amount)||0;return a},{income:0,expense:0})}
+function financeHome(){
+ const s=el('screen'),rows=ledger().map(normalized),filtered=rows.filter(periodMatch),totals=calc(filtered),net=totals.income-totals.expense;
+ const year=financeDate.slice(0,4),month=financeDate.slice(5,7);
+ s.innerHTML='<h2>আয়-ব্যয় ও হিসাব</h2><div class="finance-private">🔒 গোপনীয় আর্থিক তথ্য: বর্তমানে অ্যাপে নিরাপদ অ্যাডমিন লগইন নেই। তাই এই ডেমোতে আসল ক্লাবের হিসাব বা ব্যক্তিগত তথ্য যোগ করবেন না। চূড়ান্ত সংস্করণে শুধু অ্যাডমিন ও সহকারী অ্যাডমিনের অনুমতি থাকবে।</div><div class="finance-bar"><button class="'+(financePeriod==='month'?'selected':'')+'" onclick="financeSetPeriod(\'month\')">মাসিক</button><button class="'+(financePeriod==='year'?'selected':'')+'" onclick="financeSetPeriod(\'year\')">বার্ষিক</button><input id="financeDate" style="width:auto;max-width:170px;margin:0" type="'+(financePeriod==='year'?'number':'month')+'" '+(financePeriod==='year'?'min="2000" max="2100"':'')+' value="'+(financePeriod==='year'?year:financeDate)+'" onchange="financeSetDate(this.value)"></div><div class="finance-cards"><div class="finance-card"><small>মোট আয়</small><b>৳ '+fmt(totals.income)+'</b></div><div class="finance-card"><small>মোট ব্যয়</small><b>৳ '+fmt(totals.expense)+'</b></div><div class="finance-card net '+(net<0?'negative':'')+'"><small>'+(net<0?'ঘাটতি / লোকসান':'উদ্বৃত্ত / নিট হিসাব')+'</small><b>৳ '+fmt(Math.abs(net))+'</b></div></div><div class="finance-bar"><button class="btn" onclick="financeEdit(null,\'income\')">+ আয় যোগ</button><button class="btn" onclick="financeEdit(null,\'expense\')">+ ব্যয় যোগ</button></div><h3>খাতভিত্তিক হিসাব</h3><div class="card" id="financeCategories"></div>'+(financePeriod==='year'?'<h3>১২ মাসের হিসাব</h3><div class="card" style="overflow-x:auto" id="financeMonths"></div>':'')+'<div class="section-head"><h3>লেনদেনের বিস্তারিত</h3><span class="subtle">'+fmt(filtered.length)+'টি</span></div><input id="financeSearch" placeholder="খাত, বিবরণ, রসিদ বা নাম খুঁজুন" value="'+esc(financeQuery)+'" oninput="financeSearch(this.value)"><div class="card" id="financeEntries"></div>';
+ const cats={};filtered.forEach(x=>{const k=x.type+'|'+x.category;cats[k]=(cats[k]||0)+x.amount});
+ el('financeCategories').innerHTML=Object.keys(cats).length?Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([k,v])=>'<div class="finance-entry"><div class="detail"><b>'+esc(k.split('|')[1])+'</b><small>'+(k.startsWith('income')?'আয়':'ব্যয়')+'</small></div><strong class="'+(k.startsWith('income')?'in':'out')+'">৳ '+fmt(v)+'</strong></div>').join(''):'<p class="muted">এই সময়ে কোনো লেনদেন নেই।</p>';
+ if(financePeriod==='year'){
+ const cells=Array.from({length:12},(_,i)=>{const ym=year+'-'+String(i+1).padStart(2,'0'),a=calc(rows.filter(x=>x.date.startsWith(ym)));return '<tr><td>'+fmt(i+1)+' মাস</td><td>'+fmt(a.income)+'</td><td>'+fmt(a.expense)+'</td><td>'+fmt(a.income-a.expense)+'</td></tr>'}).join('');
+ el('financeMonths').innerHTML='<table class="finance-table"><thead><tr><th>মাস</th><th>আয়</th><th>ব্যয়</th><th>নিট</th></tr></thead><tbody>'+cells+'</tbody></table>';
+ }
+ financeRenderEntries();
+}
+window.financeSetPeriod=function(p){financePeriod=p;financeQuery='';financeHome()};
+window.financeSetDate=function(v){if(!v)return;financeDate=financePeriod==='year'?String(v).slice(0,4)+'-01':v;financeHome()};
+window.financeSearch=function(q){financeQuery=q;financeRenderEntries()};
+function financeRenderEntries(){
+ const q=financeQuery.toLowerCase(),rows=ledger().map(normalized).filter(periodMatch).filter(x=>[x.title,x.category,x.detail,x.reference,x.payee,x.method].join(' ').toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
+ el('financeEntries').innerHTML=rows.length?rows.map(x=>'<div class="finance-entry"><div class="detail"><b>'+esc(x.title||x.category)+'</b><small>'+esc(x.category)+' • '+esc(x.date||'তারিখ নেই')+'</small><small>'+esc([x.payee,x.method,x.reference].filter(Boolean).join(' • '))+'</small></div><strong class="'+(x.type==='income'?'in':'out')+'">'+(x.type==='income'?'+':'−')+'৳'+fmt(x.amount)+'</strong><button class="btn alt" onclick="financeEdit('+JSON.stringify(x.id)+')">✎</button></div>').join(''):'<p class="muted">কোনো লেনদেন পাওয়া যায়নি।</p>';
+}
+window.financeEdit=function(id,kind){
+ const x=ledger().find(v=>String(v.id)===String(id))||{},type=x.type||kind||'expense',today=new Date().toISOString().slice(0,10);
+ el('screen').innerHTML='<h2>'+(id?'লেনদেন সম্পাদনা':'নতুন লেনদেন')+'</h2><div class="finance-private">ডেমো তথ্য ব্যবহার করুন। নিরাপদ অ্যাডমিন অনুমতি এখনো সক্রিয় নয়।</div><form id="financeForm" class="finance-form"><label>লেনদেনের ধরন<select name="type" onchange="financeCategoriesFor(this.value)"><option value="income">আয়</option><option value="expense">ব্যয়</option></select></label><label>খাত<select name="category" id="financeCategory"></select></label><label>শিরোনাম / উদ্দেশ্য *<input required name="title" value="'+esc(x.title||'')+'"></label><label>টাকার পরিমাণ *<input required name="amount" type="number" min="0.01" step=".01" value="'+esc(x.amount||'')+'"></label><label>তারিখ *<input required name="date" type="date" value="'+esc(x.date||today)+'"></label><label>কার কাছ থেকে / কাকে দেওয়া হয়েছে<input name="payee" value="'+esc(x.payee||'')+'"></label><label>পেমেন্ট পদ্ধতি<select name="method"><option value="">নির্বাচন করুন</option><option>নগদ</option><option>বিকাশ</option><option>নগদ (মোবাইল ব্যাংকিং)</option><option>ব্যাংক</option><option>রকেট</option><option>অন্যান্য</option></select></label><label>রসিদ / ট্রানজেকশন নম্বর<input name="reference" value="'+esc(x.reference||'')+'"></label><label>বিস্তারিত বিবরণ<textarea name="detail">'+esc(x.detail||'')+'</textarea></label><button class="btn" type="submit">সংরক্ষণ</button><button class="btn alt" type="button" onclick="show(\'accounts\')">বাতিল</button>'+(id?'<button class="btn red" type="button" onclick="financeDelete('+JSON.stringify(x.id)+')">মুছুন</button>':'')+'</form>';
+ const f=el('financeForm');f.elements.type.value=type;financeCategoriesFor(type,x.category);f.elements.method.value=x.method||'';
+ f.onsubmit=e=>{e.preventDefault();const d=new FormData(f),amount=Number(d.get('amount'));if(!Number.isFinite(amount)||amount<=0){alert('সঠিক পরিমাণ লিখুন');return}
+ const obj={id:id||Date.now(),type:String(d.get('type')),category:String(d.get('category')),title:String(d.get('title')).trim(),amount,date:String(d.get('date')),payee:String(d.get('payee')),method:String(d.get('method')),reference:String(d.get('reference')),detail:String(d.get('detail'))};
+ if(id)Object.assign(ledger().find(v=>String(v.id)===String(id)),obj);else ledger().unshift(obj);
+ save();financeDate=obj.date.slice(0,7);financePeriod='month';show('accounts')};
+ window.scrollTo(0,0);
+};
+window.financeCategoriesFor=function(type,current){const s=el('financeCategory');s.innerHTML=(type==='income'?incomeCats:expenseCats).map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');if(current&&!Array.from(s.options).some(o=>o.value===current)){s.add(new Option(current,current))}if(current)s.value=current};
+window.financeDelete=function(id){if(!confirm('লেনদেনটি মুছবেন?'))return;records.accounts=ledger().filter(x=>String(x.id)!==String(id));save();show('accounts')};
+const oldDraw=draw;draw=function(){oldDraw();if(page==='accounts')financeHome()};draw();updateNav();
+})();
 </script></body></html>
