@@ -435,4 +435,21 @@ const oldDraw=draw;
 draw=function(){oldDraw();if(keys.includes(page))cloudPage(page);if(page==='home')homeNews()};
 refresh();
 })();
+</script><script>
+(function(){
+const ses=window.clubSession;
+window.clubManageRoles=function(){
+ if(ses.role()!=='super_admin')return alert('শুধু সুপার অ্যাডমিন অনুমতি পরিচালনা করতে পারবেন');
+ el('screen').innerHTML='<h2>অ্যাসিস্ট্যান্ট অ্যাডমিন নিয়োগ</h2><p class="warning">যাঁকে নিয়োগ দেবেন, তাঁর আগে Supabase Authentication-এ অ্যাকাউন্ট থাকতে হবে। তাঁর Auth User ID (UUID) লিখুন।</p><form id="clubRoleForm"><label>ব্যবহারকারীর User ID<input name="uid" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></label><label>অনুমতি<select name="role" style="width:100%;padding:12px"><option value="assistant_admin">অ্যাসিস্ট্যান্ট অ্যাডমিন</option><option value="member">সাধারণ সদস্য (অনুমতি বাতিল)</option></select></label><button class="btn">অনুমতি সংরক্ষণ</button><button type="button" class="btn alt" onclick="show(\'admin\')">ফিরে যান</button></form><p id="roleResult" class="muted"></p>';
+ el('clubRoleForm').onsubmit=async e=>{
+ e.preventDefault();const f=e.target,uid=f.elements.uid.value.trim(),role=f.elements.role.value;
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid))return alert('সঠিক User ID লিখুন');
+ if(uid===ses.user())return alert('নিজের সুপার অ্যাডমিন অনুমতি পরিবর্তন করবেন না');
+ try{await ses.request('/rest/v1/club_roles?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:uid,role})});el('roleResult').textContent='অনুমতি সফলভাবে সংরক্ষিত হয়েছে'}
+ catch(err){el('roleResult').textContent='অনুমতি সংরক্ষণ হয়নি: '+err.message}
+ };
+};
+const before=draw;
+draw=function(){before();if(page==='admin'&&ses.role()==='super_admin'){const b=document.createElement('button');b.className='btn';b.textContent='👤 অ্যাসিস্ট্যান্ট অ্যাডমিন নিয়োগ / বাতিল';b.onclick=window.clubManageRoles;el('screen').insertBefore(b,el('screen').firstChild)}};
+})();
 </script></body></html>
