@@ -364,11 +364,11 @@ window.clubDirectoryItems=k=>items(k);
 const names={members:'সদস্য',advisors:'উপদেষ্টা',founders:'প্রতিষ্ঠাতা',committee:'কার্যকরী কমিটি',donations:'ডোনেশন',notices:'নোটিশ ও সংবাদ',events:'ইভেন্ট',gallery:'গ্যালারি'};
 const safe=escapeHTML;
 const isStaff=()=>session.staff();
-let content=[],loading=false,error='';
-function items(k){return content.filter(x=>x.section===k).map(x=>({...x.payload,id:x.id}))}
+let content=[],loading=false,error='',privatePhones={};
+function items(k){return content.filter(x=>x.section===k).map(x=>({...x.payload,phone:isStaff()?privatePhones[x.id]||'':'',id:x.id}))}
 async function refresh(){
  loading=true;error='';
- try{let all=[];for(let offset=0;offset<10000;offset+=1000){const a=await session.request('/rest/v1/club_content?select=id,section,payload&order=updated_at.desc&limit=1000&offset='+offset);if(!Array.isArray(a))break;all=all.concat(a);if(a.length<1000)break}content=all}
+ try{let all=[];for(let offset=0;offset<10000;offset+=1000){const a=await session.request('/rest/v1/club_content?select=id,section,payload&order=updated_at.desc&limit=1000&offset='+offset);if(!Array.isArray(a))break;all=all.concat(a);if(a.length<1000)break}content=all;if(isStaff()){try{const phones=await session.request('/rest/v1/club_member_contacts?select=content_id,phone&limit=10000');privatePhones=Object.fromEntries((phones||[]).map(v=>[v.content_id,v.phone]))}catch(e){privatePhones={}}}else privatePhones={}}
  catch(e){error='অনলাইন তথ্য আনা যায়নি: '+e.message;content=[]}
  finally{loading=false;const status=el("syncStatus");if(status){status.textContent=error||"✓ অনলাইন তথ্য সংযুক্ত";status.style.color=error?"#a22b2b":"#25754b"}renderCurrent()}
 }
@@ -403,11 +403,13 @@ window.clubEdit=function(k,id){
  const f=el('cloudForm');f.elements.featured.checked=!!x.featured;if(k==='members')f.elements.status.value=x.status||'সক্রিয়';
  f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('[type=submit]');b.disabled=true;
  try{const d=new FormData(f),photo=await resize(f.elements.photo.files[0]);
- const payload={title:String(d.get('title')||'').trim(),role:String(d.get('role')||''),country:String(d.get('country')||''),date:String(d.get('date')||''),category:String(d.get('category')||''),detail:String(d.get('detail')||''),featured:d.has('featured')};if(k==='members'){payload.address=String(d.get('address')||'');payload.phone=String(d.get('phone')||'').replace(/[^0-9+]/g,'');payload.status=String(d.get('status')||'সক্রিয়');}
+ const payload={title:String(d.get('title')||'').trim(),role:String(d.get('role')||''),country:String(d.get('country')||''),date:String(d.get('date')||''),category:String(d.get('category')||''),detail:String(d.get('detail')||''),featured:d.has('featured')};let memberPhone='';if(k==='members'){payload.address=String(d.get('address')||'');memberPhone=String(d.get('phone')||'').replace(/[^0-9+]/g,'');payload.status=String(d.get('status')||'সক্রিয়');}
  if(d.get('amount')!=='')payload.amount=Number(d.get('amount'));if(photo)payload.photo=photo;else if(x.photo)payload.photo=x.photo;
  if(!payload.title)throw Error('শিরোনাম দিন');
+ let contentId=id;
  if(id){await session.request('/rest/v1/club_content?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({payload,updated_at:new Date().toISOString()})})}
- else{await session.request('/rest/v1/club_content',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({section:k,payload})})}
+ else{const created=await session.request('/rest/v1/club_content',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({section:k,payload})});contentId=created?.[0]?.id;if(!contentId)throw Error('নতুন রেকর্ডের আইডি পাওয়া যায়নি')}
+ if(k==='members'){await session.request('/rest/v1/club_member_contacts?on_conflict=content_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({content_id:contentId,phone:memberPhone})})}
  await refresh();show(k)
  }catch(err){alert('অনলাইনে সংরক্ষণ হয়নি: '+err.message)}finally{b.disabled=false}
  };
