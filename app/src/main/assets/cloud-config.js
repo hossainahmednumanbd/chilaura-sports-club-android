@@ -1,0 +1,2 @@
+window.CLUB_SUPABASE_URL = '';
+window.CLUB_SUPABASE_ANON_KEY = '';
