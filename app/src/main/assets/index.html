@@ -274,4 +274,73 @@ window.financeCategoriesFor=function(type,current){const s=el('financeCategory')
 window.financeDelete=function(id){if(!confirm('লেনদেনটি মুছবেন?'))return;records.accounts=ledger().filter(x=>String(x.id)!==String(id));save();show('accounts')};
 const oldDraw=draw;draw=function(){oldDraw();if(page==='accounts')financeHome()};draw();updateNav();
 })();
+</script><script src="cloud-config.js"></script>
+<style>.auth-panel{padding:18px;background:white;border:1px solid #dce9df;border-radius:16px;margin:14px 0}.auth-panel label{display:block;margin:12px 0}.auth-panel .muted{line-height:1.6}.auth-state{font-size:13px;padding:9px;border-radius:9px;background:#e7f3ea;margin:10px 0}.finance-locked{background:#fff3d7;border-radius:15px;padding:18px;line-height:1.7}</style>
+<script>
+(function(){
+let accessToken='',staffRole='',authUserId='',cloudFinance=[];
+const cloud=()=>!!(window.CLUB_SUPABASE_URL&&window.CLUB_SUPABASE_ANON_KEY);
+const base=()=>String(window.CLUB_SUPABASE_URL||'').replace(/\/$/,'');
+const pubkey=()=>String(window.CLUB_SUPABASE_ANON_KEY||'');
+const staff=()=>staffRole==='super_admin'||staffRole==='assistant_admin';
+async function request(route,options={}){
+ const headers={'apikey':pubkey(),'Content-Type':'application/json',...(accessToken?{'Authorization':'Bearer '+accessToken}:{}),...(options.headers||{})};
+ const response=await fetch(base()+route,{...options,headers});
+ if(!response.ok){let msg='HTTP '+response.status;try{const j=await response.json();msg=j.message||j.error_description||j.msg||msg}catch(e){}throw Error(msg)}
+ if(response.status===204)return null;const txt=await response.text();return txt?JSON.parse(txt):null;
+}
+function locked(){
+ el('screen').innerHTML='<h2>🔒 আয়-ব্যয়ের গোপন হিসাব</h2><div class="finance-locked">শুধুমাত্র সুপার অ্যাডমিন ও অ্যাসিস্ট্যান্ট অ্যাডমিন এই তথ্য দেখতে পারবেন। সাধারণ সদস্যদের কাছে আয়-ব্যয়ের হিসাব দেখানো হবে না।</div>'+(cloud()?'<div class="auth-panel"><h3>অ্যাডমিন লগইন</h3><form id="financeLogin"><label>ইমেইল<input type="email" name="email" required autocomplete="username"></label><label>পাসওয়ার্ড<input type="password" name="password" required autocomplete="current-password"></label><button class="btn">লগইন</button></form><p class="muted" id="authMessage">আপনার অনুমোদিত অ্যাডমিন অ্যাকাউন্ট ব্যবহার করুন।</p></div>':'<div class="auth-panel"><b>অনলাইন সার্ভার সংযুক্ত হয়নি</b><p class="muted">Supabase প্রজেক্টের URL ও প্রকাশযোগ্য কী সংযুক্ত হলে অনুমোদিত অ্যাডমিন লগইন চালু হবে। নিরাপত্তার জন্য এখানে স্থানীয় হিসাব দেখানো হচ্ছে না।</p></div>');
+ const f=el('financeLogin');if(f)f.onsubmit=async e=>{e.preventDefault();const btn=f.querySelector('button');btn.disabled=true;el('authMessage').textContent='যাচাই হচ্ছে…';try{await login(f.elements.email.value,f.elements.password.value)}catch(err){el('authMessage').textContent='লগইন ব্যর্থ: '+err.message}finally{btn.disabled=false}};
+}
+async function login(email,password){
+ const a=await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
+ accessToken=a.access_token;authUserId=a.user.id;
+ const roles=await request('/rest/v1/club_roles?select=role&user_id=eq.'+encodeURIComponent(authUserId));
+ staffRole=roles?.[0]?.role||'member';
+ if(!staff()){accessToken='';authUserId='';locked();return}
+ await loadFinance();show('accounts');
+}
+async function loadFinance(){
+ if(!staff()||!cloud())return;
+ const rows=await request('/rest/v1/club_finances?select=*&order=entry_date.desc&limit=1000');
+ cloudFinance=(rows||[]).map(x=>({id:x.id,title:x.title,detail:x.notes||'',amount:Number(x.amount),type:x.kind,category:x.category,date:x.entry_date,method:x.method||'',reference:x.receipt_reference||'',payee:x.counterparty||''}));
+ records.accounts=cloudFinance;
+}
+window.financeLogout=function(){accessToken='';authUserId='';staffRole='';cloudFinance=[];records.accounts=[];locked()};
+const oldSave=save;
+save=function(){const privateData=records.accounts;records.accounts=[];try{oldSave()}finally{records.accounts=privateData}};
+records.accounts=[];
+const oldDraw=draw;
+draw=function(){oldDraw();if(page==='accounts'&&!staff())locked()};
+const oldShow=show;
+show=function(k){if(k==='accounts'&&!staff()){page=k;el('moreMenu').hidden=true;locked();updateNav();window.scrollTo(0,0);return}oldShow(k)};
+const oldEdit=financeEdit;
+financeEdit=function(id,kind){
+ if(!staff())return locked();
+ oldEdit(id,kind);
+ const form=el('financeForm');if(!form)return;
+ form.onsubmit=async e=>{
+ e.preventDefault();const b=form.querySelector('[type=submit]');b.disabled=true;
+ try{
+ const d=new FormData(form),amount=Number(d.get('amount'));
+ if(!Number.isFinite(amount)||amount<=0)throw Error('সঠিক টাকার পরিমাণ লিখুন');
+ const payload={kind:String(d.get('type')),category:String(d.get('category')),title:String(d.get('title')).trim(),amount,entry_date:String(d.get('date')),counterparty:String(d.get('payee')),method:String(d.get('method')),receipt_reference:String(d.get('reference')),notes:String(d.get('detail'))};
+ if(!payload.title||!payload.entry_date)throw Error('শিরোনাম ও তারিখ দিন');
+ if(id){await request('/rest/v1/club_finances?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify(payload)})}
+ else{payload.created_by=authUserId;await request('/rest/v1/club_finances',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify(payload)})}
+ await loadFinance();financeDate=payload.entry_date.slice(0,7);financePeriod='month';show('accounts');
+ }catch(err){alert('অনলাইন হিসাব সংরক্ষণ হয়নি: '+err.message)}finally{b.disabled=false}
+ };
+};
+financeDelete=async function(id){
+ if(!staff())return locked();
+ if(staffRole!=='super_admin'){alert('শুধু সুপার অ্যাডমিন হিসাব মুছতে পারবেন');return}
+ if(!confirm('এই লেনদেন স্থায়ীভাবে মুছবেন?'))return;
+ try{await request('/rest/v1/club_finances?id=eq.'+encodeURIComponent(id),{method:'DELETE'});await loadFinance();show('accounts')}catch(err){alert('মুছতে ব্যর্থ: '+err.message)}
+};
+const oldAdminDraw=draw;
+draw=function(){oldAdminDraw();if(page==='admin'){const s=el('screen');const box=document.createElement('div');box.className='auth-state';box.innerHTML=staff()?'অ্যাডমিন লগইন সক্রিয়: '+(staffRole==='super_admin'?'সুপার অ্যাডমিন':'অ্যাসিস্ট্যান্ট অ্যাডমিন')+' <button class="btn alt" onclick="financeLogout()">লগআউট</button>':'নিরাপদ অনলাইন অ্যাডমিন লগইন কেবল আয়-ব্যয় বিভাগে প্রস্তুত করা হয়েছে; অন্য বিভাগগুলোর সম্পাদনা এখনো ডেমো।';s.insertBefore(box,s.firstChild)}};
+show('home');
+})();
 </script></body></html>
