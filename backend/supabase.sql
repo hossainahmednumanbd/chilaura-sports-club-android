@@ -69,3 +69,19 @@ create policy "finance super admin delete" on public.club_finances for delete to
 -- run once replacing UUID with that user's Auth user ID:
 -- insert into public.club_roles(user_id,role) values ('REPLACE_WITH_AUTH_USER_UUID','super_admin');
 -- Never publish personal phone/email in public club_content without consent.
+
+-- Private member phone numbers: staff-only access, never store in public club_content.payload.
+create table if not exists public.club_member_contacts (
+ content_id uuid primary key references public.club_content(id) on delete cascade,
+ phone text not null default '',
+ updated_at timestamptz not null default now()
+);
+alter table public.club_member_contacts enable row level security;
+drop policy if exists "staff read member contacts" on public.club_member_contacts;
+create policy "staff read member contacts" on public.club_member_contacts for select to authenticated using(public.club_has_role(array['super_admin','assistant_admin']));
+drop policy if exists "staff insert member contacts" on public.club_member_contacts;
+create policy "staff insert member contacts" on public.club_member_contacts for insert to authenticated with check(public.club_has_role(array['super_admin','assistant_admin']));
+drop policy if exists "staff update member contacts" on public.club_member_contacts;
+create policy "staff update member contacts" on public.club_member_contacts for update to authenticated using(public.club_has_role(array['super_admin','assistant_admin'])) with check(public.club_has_role(array['super_admin','assistant_admin']));
+drop policy if exists "staff delete member contacts" on public.club_member_contacts;
+create policy "staff delete member contacts" on public.club_member_contacts for delete to authenticated using(public.club_has_role(array['super_admin','assistant_admin']));
