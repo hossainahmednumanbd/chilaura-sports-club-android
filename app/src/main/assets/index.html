@@ -76,4 +76,87 @@ const oldDraw=draw;
 draw=function(){oldDraw();if(personSection())personList()};
 draw();updateNav();
 })();
+</script><style>
+.donate-summary{background:linear-gradient(120deg,#075b3e,#108354);color:white;border-radius:18px;padding:17px;margin:12px 0}.donate-summary .amount{font-size:26px;font-weight:800;margin-top:5px}.donate-tabs{display:flex;gap:8px;margin:14px 0}.donate-tabs button{flex:1;border:1px solid #cfe2d6;border-radius:12px;padding:11px 5px;background:#fff;color:#1c5b3c;font-weight:700}.donate-tabs button.active{background:#08643f;color:white}.donate-cat{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid #e5eee8}.donate-cat .cat-icon{width:53px;height:53px;border-radius:50%;display:grid;place-items:center;font-size:26px;background:#e4f3e8}.donate-cat .cat-text{flex:1;min-width:0}.donate-cat .cat-text b{display:block}.donate-cat .cat-text small{color:#668070}.donate-cat button{background:#087244;color:#fff;border:0;border-radius:9px;padding:8px 10px}.donor-card{display:flex;align-items:center;gap:11px;padding:12px 2px;border-bottom:1px solid #e7eee9}.donor-card:last-child{border-bottom:0}.donor-photo{height:61px;width:61px;border-radius:50%;object-fit:cover;border:2px solid #dcece1;background:#e6f1e9;flex-shrink:0}.donor-content{flex:1;min-width:0}.donor-content b{display:block;font-size:15px}.donor-content small{display:block;color:#648070;margin-top:3px}.donor-card button{background:#087244;color:white;border:0;border-radius:9px;padding:8px 10px}.donor-profile{text-align:center;padding:22px 12px;background:linear-gradient(#e2f3e8,#fff);border-radius:17px}.donor-profile img{width:116px;height:116px;border-radius:50%;object-fit:cover;border:3px solid #0a8755}.donor-profile h2{margin:10px 0 4px}.donor-profile .country{color:#668070}.donor-fields{margin-top:12px}.donor-field{display:flex;gap:8px;padding:12px 0;border-bottom:1px solid #e5eee8}.donor-field b{width:108px;flex-shrink:0;color:#426b53}.donor-field span{overflow-wrap:anywhere}.donor-form label{display:block;font-weight:600;font-size:14px;margin:10px 0}.donor-form select{width:100%;padding:11px;border:1px solid #c5d7cb;border-radius:8px;background:#fff;font:inherit}.donor-form input[type=checkbox]{width:auto}
+</style>
+<script>
+(function(){
+const categories=[
+ {id:'sports',icon:'⚽',name:'খেলাধুলায় সহযোগিতা',desc:'ফুটবল, ক্রিকেট ও ক্রীড়া আয়োজন'},
+ {id:'education',icon:'📚',name:'শিক্ষা সহযোগিতা',desc:'বই, খাতা ও শিক্ষা উপকরণ'},
+ {id:'disaster',icon:'💧',name:'দুর্যোগ সহযোগিতা',desc:'ত্রাণ ও জরুরি সহায়তা'},
+ {id:'health',icon:'❤️',name:'স্বাস্থ্য সহযোগিতা',desc:'চিকিৎসা ও স্বাস্থ্যসেবা'},
+ {id:'community',icon:'🌱',name:'সামাজিক উন্নয়ন',desc:'সমাজসেবা ও উন্নয়নমূলক কাজ'}
+];
+let donationTab='categories',selectedCategory='all';
+const safeDonor=escapeHTML;
+const placeholder='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" rx="60" fill="#e4f2e9"/><circle cx="60" cy="43" r="23" fill="#8cbaa1"/><path d="M15 120c0-34 20-55 45-55s45 21 45 55" fill="#8cbaa1"/></svg>');
+function donorImg(x){return x.photo&&/^data:image\/(jpeg|png|webp);base64,/.test(x.photo)?x.photo:placeholder}
+function fmt(n){return Number(n||0).toLocaleString('bn-BD',{maximumFractionDigits:2})}
+function donorRows(){return (records.donations||[]).filter(x=>selectedCategory==='all'||x.category===selectedCategory)}
+function donationHome(){
+ const all=records.donations||[];
+ const sum=all.reduce((a,x)=>a+(Number(x.amount)||0),0);
+ const s=el('screen');
+ s.innerHTML='<h2>ডোনেশন ও সহযোগিতা</h2><div class="donate-summary"><div>মোট অনুদান (এই ফোনে সংরক্ষিত)</div><div class="amount">৳ '+fmt(sum)+'</div><small>'+fmt(all.length)+'টি অনুদানের রেকর্ড</small></div><div class="donate-tabs"><button id="tabCategories" onclick="donationSwitch(\'categories\')">সহযোগিতার বিভাগ</button><button id="tabDonors" onclick="donationSwitch(\'donors\')">দাতাদের তালিকা</button></div><div id="donationContent"></div>';
+ renderDonation();
+}
+window.donationSwitch=function(t){donationTab=t;selectedCategory='all';renderDonation()};
+window.donationCategory=function(id){selectedCategory=id;donationTab='donors';renderDonation()};
+function renderDonation(){
+ el('tabCategories').classList.toggle('active',donationTab==='categories');
+ el('tabDonors').classList.toggle('active',donationTab==='donors');
+ const box=el('donationContent');
+ if(donationTab==='categories'){
+ box.innerHTML='<p class="muted">আপনার সহযোগিতা ক্লাবের বিভিন্ন কার্যক্রমে কাজে লাগবে।</p><div class="card">'+categories.map(c=>'<div class="donate-cat"><div class="cat-icon">'+c.icon+'</div><div class="cat-text"><b>'+safeDonor(c.name)+'</b><small>'+safeDonor(c.desc)+'</small></div><button onclick="donationCategory(\''+c.id+'\')">বিস্তারিত</button></div>').join('')+'</div><button class="btn" onclick="donationForm(null)">+ ডোনেশন যোগ করুন</button>';
+ return;
+ }
+ const cat=categories.find(c=>c.id===selectedCategory);
+ box.innerHTML='<div class="section-head"><h2>'+(cat?safeDonor(cat.name):'দাতাদের তালিকা')+'</h2><span class="subtle">'+fmt(donorRows().length)+'টি</span></div><input id="donorSearch" placeholder="দাতার নাম, পদবি বা দেশ খুঁজুন" oninput="donationRenderRows()"><button class="btn" onclick="donationForm(null)">+ নতুন দাতা যোগ করুন</button><div class="card" id="donorRows"></div>';
+ donationRenderRows();
+}
+window.donationRenderRows=function(){
+ const q=(el('donorSearch')?.value||'').trim().toLowerCase();
+ const list=donorRows().filter(x=>[x.title,x.role,x.country,x.detail].join(' ').toLowerCase().includes(q));
+ el('donorRows').innerHTML=list.length?list.map(x=>'<div class="donor-card"><img class="donor-photo" alt="" src="'+donorImg(x)+'"><div class="donor-content"><b>'+safeDonor(x.title)+'</b><small>'+safeDonor([x.role,x.country].filter(Boolean).join(' • ')||'সহযোগী')+'</small><small>৳ '+fmt(x.amount)+'</small></div><button onclick="donorDetail('+JSON.stringify(x.id)+')">বিস্তারিত</button></div>').join(''):'<p class="muted">এই বিভাগে কোনো দাতা পাওয়া যায়নি।</p>';
+};
+function info(label,value){return value?'<div class="donor-field"><b>'+safeDonor(label)+'</b><span>'+safeDonor(value)+'</span></div>':''}
+window.donorDetail=function(id){
+ const x=records.donations.find(a=>String(a.id)===String(id));if(!x)return donationHome();
+ const cat=categories.find(c=>c.id===x.category);
+ el('screen').innerHTML='<button class="btn alt" onclick="show(\'donations\')">← ডোনেশন তালিকায় ফিরুন</button><div class="donor-profile"><img alt="দাতার ছবি" src="'+donorImg(x)+'"><h2>'+safeDonor(x.title)+'</h2><div>'+safeDonor(x.role||'সম্মানিত দাতা')+'</div><div class="country">'+safeDonor(x.country||'')+'</div></div><div class="card donor-fields">'+info('অনুদান','৳ '+fmt(x.amount))+info('বিভাগ',cat?cat.name:'সাধারণ সহযোগিতা')+info('দেশ',x.country)+info('পদবি',x.role)+info('তারিখ',x.date)+info('বিবরণ',x.detail)+(x.showPhone?info('ফোন',x.phone):'')+'</div><button class="btn alt" onclick="donationForm('+JSON.stringify(x.id)+')">সম্পাদনা</button><button class="btn red" onclick="donationDelete('+JSON.stringify(x.id)+')">মুছুন</button><p class="small-note">ডেমো: সম্পাদনার নিরাপদ অ্যাডমিন অনুমতি এখনো চালু হয়নি।</p>';
+ window.scrollTo(0,0);
+};
+window.donationDelete=function(id){if(!confirm('ডোনেশনের তথ্য মুছবেন?'))return;records.donations=records.donations.filter(x=>String(x.id)!==String(id));save();show('donations')};
+function field(name,label,val,type='text'){return '<label>'+label+'<input name="'+name+'" type="'+type+'" value="'+safeDonor(val??'')+'"></label>'}
+function imageResize(file){
+ return new Promise((resolve,reject)=>{
+  if(!file){resolve(null);return}
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){reject(Error('JPG, PNG বা WebP ছবি দিন'));return}
+  const fr=new FileReader();fr.onerror=()=>reject(Error('ছবি পড়া যায়নি'));
+  fr.onload=()=>{const im=new Image();im.onerror=()=>reject(Error('ছবি খোলা যায়নি'));im.onload=()=>{const c=document.createElement('canvas');c.width=320;c.height=320;const z=c.getContext('2d'),n=Math.min(im.width,im.height);z.drawImage(im,(im.width-n)/2,(im.height-n)/2,n,n,0,0,320,320);resolve(c.toDataURL('image/jpeg',.7))};im.src=fr.result};fr.readAsDataURL(file);
+ });
+}
+window.donationForm=function(id){
+ const x=records.donations.find(a=>String(a.id)===String(id))||{};
+ el('screen').innerHTML='<h2>'+(id?'ডোনেশন সম্পাদনা':'নতুন ডোনেশন যোগ')+'</h2><form id="donationEntry" class="donor-form">'+field('title','দাতার পূর্ণ নাম *',x.title)+field('role','পদবি / পরিচয়',x.role)+field('country','যে দেশে থাকেন',x.country)+field('amount','অনুদানের পরিমাণ (টাকা) *',x.amount||0,'number')+field('date','অনুদানের তারিখ',x.date,'date')+field('phone','মোবাইল (ঐচ্ছিক)',x.phone,'tel')+'<label>সহযোগিতার বিভাগ<select name="category"><option value="general">সাধারণ সহযোগিতা</option>'+categories.map(c=>'<option value="'+c.id+'">'+safeDonor(c.name)+'</option>').join('')+'</select></label><label>দাতার ছবি (ঐচ্ছিক)<input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label><label><input type="checkbox" name="showPhone"> মোবাইল নম্বর প্রকাশের অনুমতি আছে</label><label>বিস্তারিত / মন্তব্য<textarea name="detail">'+safeDonor(x.detail||'')+'</textarea></label><button class="btn" type="submit">সংরক্ষণ করুন</button><button class="btn alt" type="button" onclick="show(\'donations\')">বাতিল</button></form><p class="small-note">তথ্য শুধু এই ফোনে সংরক্ষিত হবে; অনলাইন সিঙ্ক এখনো চালু নয়।</p>';
+ const form=el('donationEntry');form.elements.category.value=x.category||selectedCategory==='all'?'general':selectedCategory;
+ if(x.category)form.elements.category.value=x.category;else if(selectedCategory!=='all')form.elements.category.value=selectedCategory;
+ form.elements.showPhone.checked=!!x.showPhone;
+ form.onsubmit=async e=>{
+  e.preventDefault();const btn=form.querySelector('[type=submit]');btn.disabled=true;
+  try{
+   const f=new FormData(form),title=String(f.get('title')||'').trim(),amount=Number(f.get('amount'));
+   if(!title||!Number.isFinite(amount)||amount<0){alert('সঠিক নাম ও পরিমাণ লিখুন');return}
+   const photo=(await imageResize(form.elements.photo.files[0]))||x.photo||'';
+   const item={id:id||Date.now(),title,role:String(f.get('role')||''),country:String(f.get('country')||''),amount,date:String(f.get('date')||''),phone:String(f.get('phone')||''),category:String(f.get('category')||'general'),detail:String(f.get('detail')||''),showPhone:f.has('showPhone'),photo};
+   if(id)Object.assign(records.donations.find(a=>String(a.id)===String(id)),item);else records.donations.unshift(item);
+   save();donationTab='donors';selectedCategory='all';show('donations');
+  }catch(err){alert('সংরক্ষণ ব্যর্থ: '+err.message)}finally{btn.disabled=false}
+ };
+ window.scrollTo(0,0);
+};
+const previousDraw=draw;draw=function(){previousDraw();if(page==='donations')donationHome()};
+draw();updateNav();
+})();
 </script></body></html>
