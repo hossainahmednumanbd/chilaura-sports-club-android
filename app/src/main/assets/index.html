@@ -557,4 +557,61 @@ const oldRefresh=window.clubRefresh;
 window.clubRefresh=async function(){await oldRefresh();await loadPayment()};
 loadPayment();
 })();
+</script><style>
+.notice-hero{background:linear-gradient(125deg,#075b39,#0a8554);border-radius:17px;color:white;padding:21px;margin:10px 0 16px}.notice-hero h2{color:white;margin:0 0 7px;font-size:23px}.notice-hero p{color:#d4f2df;margin:0;font-size:13px}.notice-stat{display:flex;gap:10px;margin:12px 0}.notice-stat>div{flex:1;border:1px solid #e2eae4;background:#fff;border-radius:12px;padding:12px;text-align:center}.notice-stat b{display:block;font-size:20px;color:#075e3b}.notice-stat small{font-size:11px;color:#657e70}.notice-cards{display:grid;gap:13px}.notice-card{background:#fff;border:1px solid #e0eae3;border-radius:15px;overflow:hidden;box-shadow:0 3px 14px #123b2710}.notice-card img{width:100%;height:165px;object-fit:cover;display:block}.notice-card-content{padding:14px}.notice-chip{display:inline-block;background:#e4f4ea;color:#08623d;font-size:11px;font-weight:700;border-radius:7px;padding:5px 9px}.notice-chip.urgent{background:#fff0ec;color:#bc3926}.notice-card h3{font-size:18px;margin:10px 0 6px;line-height:1.4;color:#173e2c}.notice-card p{color:#607568;font-size:13px;line-height:1.6;margin:7px 0}.notice-meta{display:flex;align-items:center;gap:8px;color:#788c7d;font-size:12px;margin-top:10px}.notice-card button{border:0;background:#0b7548;color:white;padding:10px 15px;border-radius:9px;margin-top:10px}.notice-article{background:#fff;border:1px solid #e0eae3;border-radius:15px;overflow:hidden;margin-top:12px}.notice-article img{width:100%;max-height:350px;object-fit:cover}.notice-article-body{padding:18px}.notice-article-body h2{font-size:23px;line-height:1.45;margin:12px 0}.notice-article-body p{line-height:1.85;white-space:pre-wrap;overflow-wrap:anywhere}.notice-article-meta{font-size:13px;color:#687d70;border-bottom:1px solid #e5ede7;padding-bottom:13px;margin-bottom:15px}.notice-article a{color:#09683e;overflow-wrap:anywhere}
+</style>
+<script>
+(function(){
+const oldShow=show,oldDraw=draw;
+const dateLabel=d=>{if(!d)return 'তারিখ উল্লেখ নেই';const v=new Date(d+'T12:00:00');return isNaN(v)?d:v.toLocaleDateString('bn-BD',{day:'numeric',month:'long',year:'numeric'})};
+function notices(){
+ const screen=el('screen');if(!screen)return;
+ const data=window.clubDirectoryItems?.('notices')||[];
+ const hero=document.createElement('div');hero.className='notice-hero';hero.innerHTML='<h2>📢 নোটিশ ও সংবাদ</h2><p>ক্লাবের সর্বশেষ ঘোষণা, কার্যক্রম ও গুরুত্বপূর্ণ আপডেট</p>';
+ screen.replaceChildren(hero);
+ const stats=document.createElement('div');stats.className='notice-stat';
+ [['মোট প্রকাশনা',data.length],['জরুরি ঘোষণা',data.filter(x=>x.category==='জরুরি ঘোষণা').length],['ইভেন্ট',data.filter(x=>x.category==='ইভেন্ট').length]].forEach(([t,n])=>{const d=document.createElement('div');const b=document.createElement('b');b.textContent=n.toLocaleString('bn-BD');const s=document.createElement('small');s.textContent=t;d.append(b,s);stats.appendChild(d)});screen.appendChild(stats);
+ if(window.clubSession.staff()){const add=document.createElement('button');add.className='btn';add.textContent='＋ নতুন নোটিশ / সংবাদ প্রকাশ';add.onclick=()=>clubEdit('notices',null);screen.appendChild(add)}
+ const search=document.createElement('input');search.placeholder='🔎 শিরোনাম বা সংবাদ খুঁজুন';search.style.marginTop='12px';screen.appendChild(search);
+ const filters=document.createElement('div');filters.className='club-filter';screen.appendChild(filters);
+ const cards=document.createElement('div');cards.className='notice-cards';screen.appendChild(cards);
+ let selected='সকল';
+ ['সকল','নোটিশ','সংবাদ','ইভেন্ট','জরুরি ঘোষণা'].forEach(label=>{const b=document.createElement('button');b.textContent=label;b.className=label===selected?'active':'';b.onclick=()=>{selected=label;filters.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));paint()};filters.appendChild(b)});
+ search.oninput=paint;
+ function paint(){
+ cards.replaceChildren();
+ const q=search.value.trim().toLowerCase();
+ const items=data.filter(x=>(selected==='সকল'||(x.category||'নোটিশ')===selected)&&[x.title,x.summary,x.detail,x.author].some(v=>String(v||'').toLowerCase().includes(q))).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ if(!items.length){const p=document.createElement('p');p.className='muted';p.textContent='এই বিভাগে এখনো কোনো প্রকাশনা নেই।';cards.appendChild(p);return}
+ items.forEach(x=>{
+ const card=document.createElement('article');card.className='notice-card';
+ if(x.photo&&/^data:image\/(jpeg|png|webp);base64,/.test(x.photo)){const image=document.createElement('img');image.src=x.photo;image.alt='সংবাদের ছবি';card.appendChild(image)}
+ const body=document.createElement('div');body.className='notice-card-content';
+ const chip=document.createElement('span');chip.className='notice-chip'+(x.category==='জরুরি ঘোষণা'?' urgent':'');chip.textContent=x.category||'নোটিশ';body.appendChild(chip);
+ const title=document.createElement('h3');title.textContent=x.title||'শিরোনাম নেই';body.appendChild(title);
+ const desc=document.createElement('p');desc.textContent=(x.summary||x.detail||'').slice(0,160);body.appendChild(desc);
+ const meta=document.createElement('div');meta.className='notice-meta';meta.textContent='📅 '+dateLabel(x.date)+(x.author?'  •  '+x.author:'');body.appendChild(meta);
+ const read=document.createElement('button');read.textContent='বিস্তারিত পড়ুন →';read.onclick=()=>article(x);body.appendChild(read);card.appendChild(body);cards.appendChild(card);
+ })
+ }
+ paint();
+}
+function article(x){
+ const screen=el('screen');screen.replaceChildren();
+ const back=document.createElement('button');back.className='btn alt';back.textContent='← সব নোটিশ';back.onclick=notices;screen.appendChild(back);
+ const article=document.createElement('article');article.className='notice-article';
+ if(x.photo&&/^data:image\/(jpeg|png|webp);base64,/.test(x.photo)){const image=document.createElement('img');image.src=x.photo;image.alt='সংবাদের ছবি';article.appendChild(image)}
+ const body=document.createElement('div');body.className='notice-article-body';
+ const chip=document.createElement('span');chip.className='notice-chip'+(x.category==='জরুরি ঘোষণা'?' urgent':'');chip.textContent=x.category||'নোটিশ';body.appendChild(chip);
+ const title=document.createElement('h2');title.textContent=x.title||'';body.appendChild(title);
+ const meta=document.createElement('div');meta.className='notice-article-meta';meta.textContent='📅 '+dateLabel(x.date)+(x.author?'  •  প্রকাশক: '+x.author:'');body.appendChild(meta);
+ if(x.summary){const summary=document.createElement('p');summary.style.fontWeight='700';summary.textContent=x.summary;body.appendChild(summary)}
+ const detail=document.createElement('p');detail.textContent=x.detail||'';body.appendChild(detail);
+ if(x.source&&/^https:\/\//i.test(x.source)){const a=document.createElement('a');a.href=x.source;a.target='_blank';a.rel='noopener noreferrer';a.textContent='মূল সূত্র দেখুন ↗';body.appendChild(a)}
+ if(window.clubSession.staff()){const edit=document.createElement('button');edit.className='btn alt';edit.textContent='সম্পাদনা';edit.onclick=()=>clubEdit('notices',x.id);body.appendChild(edit);const del=document.createElement('button');del.className='btn red';del.textContent='মুছুন';del.onclick=()=>clubDelete(x.id);body.appendChild(del)}
+ article.appendChild(body);screen.appendChild(article);
+}
+show=function(k){oldShow(k);if(k==='notices')notices()};
+draw=function(){oldDraw();if(page==='notices'&&el('cloudRows'))notices()};
+})();
 </script></body></html>
