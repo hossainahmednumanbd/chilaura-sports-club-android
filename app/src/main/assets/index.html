@@ -673,4 +673,65 @@ window.clubRefresh=async function(){await oldRefresh();await reload();if(page===
 const menu=el('moreMenu')?.querySelector('.grid');if(menu){const tile=document.createElement('div');tile.className='tile';tile.innerHTML='<i>☎️</i>যোগাযোগ';tile.onclick=()=>show('contact');menu.appendChild(tile)}
 reload().then(()=>{if(page==='donations')donation()});
 })();
+</script>
+<style>
+body:has(#screen.club-home-v2){background:#f4f8f6}
+body:has(#screen.club-home-v2) header{padding:13px 17px 15px;border-radius:0;background:linear-gradient(125deg,#004d35,#087951);display:grid;grid-template-columns:68px 1fr 42px;align-items:center;column-gap:10px;min-height:106px}
+body:has(#screen.club-home-v2) header .logo{width:66px;height:66px;grid-row:1/3}
+body:has(#screen.club-home-v2) header h1{font-size:18px;line-height:1.35;margin:0;grid-column:2}
+body:has(#screen.club-home-v2) header #tagline{grid-column:2;color:#ffdf5c;font-size:12px;font-weight:700}
+body:has(#screen.club-home-v2) header .club-head-bell{grid-column:3;grid-row:1/3;background:transparent;border:0;color:white;font-size:28px}
+body:has(#screen.club-home-v2) main{padding:0 12px calc(92px + env(safe-area-inset-bottom,0px))}
+body:has(#screen.club-home-v2) #syncStatus{font-size:11px;padding:0 7px;margin:5px 0}
+.club-home-v2 .club-home-banner{min-height:148px;border-radius:0 0 16px 16px;position:relative;overflow:hidden;background:linear-gradient(180deg,#80cdf9 0%,#c8ecff 51%,#64bd6b 52%,#16834c 100%);margin:0 -12px 13px;text-align:center;padding:18px 10px}
+.club-home-v2 .club-home-banner:before{content:"";position:absolute;inset:auto -5% 0;height:35%;background:repeating-linear-gradient(165deg,#62b84d 0 22px,#4eaa42 23px 42px);clip-path:polygon(0 45%,16% 24%,36% 40%,60% 15%,80% 33%,100% 10%,100% 100%,0 100%);opacity:.75}
+.club-home-v2 .club-home-banner strong{position:relative;z-index:1;display:block;color:#064a30;font-size:22px;text-shadow:1px 2px white,-1px -1px white;font-weight:900;line-height:1.35}
+.club-home-v2 .club-home-banner strong em{font-style:normal;color:#e82727}
+.club-home-v2 .club-home-ball{position:absolute;right:18px;bottom:9px;font-size:40px;z-index:1}
+.club-home-v2 .club-home-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:10px 0 17px}
+.club-home-v2 .club-home-shortcut{min-width:0;min-height:95px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #dce6ed;border-radius:13px;padding:9px 2px;background:linear-gradient(135deg,#edf5ff,#fff);box-shadow:0 3px 8px #0c563b0c;font-size:12px;font-weight:800;color:#193b2a;gap:7px}
+.club-home-v2 .club-home-shortcut:nth-child(4n+2){background:linear-gradient(135deg,#f0ebff,#fff)}
+.club-home-v2 .club-home-shortcut:nth-child(4n+3){background:linear-gradient(135deg,#e3f8ed,#fff)}
+.club-home-v2 .club-home-shortcut:nth-child(4n){background:linear-gradient(135deg,#fff0ee,#fff)}
+.club-home-v2 .club-home-shortcut .ico{font-size:29px;line-height:1.2}
+.club-home-v2 .club-news-title{background:linear-gradient(90deg,#00643e,#06865b);color:#fff;border-radius:12px 12px 0 0;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:800}
+.club-home-v2 .club-news-title button{border:1px solid #ffffff90;border-radius:20px;background:transparent;color:#fff;padding:5px 9px;font-size:12px}
+.club-home-v2 .club-news-card{display:flex;gap:12px;padding:12px;background:#fff;border:1px solid #e0eae4;border-top:0;border-radius:0 0 13px 13px;margin-bottom:12px;align-items:center}
+.club-home-v2 .club-news-card img{width:102px;height:93px;border-radius:9px;object-fit:cover;flex-shrink:0}
+.club-home-v2 .club-news-card h3{font-size:15px;line-height:1.45;margin:0 0 5px}
+.club-home-v2 .club-news-card p{font-size:12px;color:#6b8073;margin:4px 0}
+.club-home-v2 .club-news-card button{border:0;background:transparent;color:#086c45;font-weight:800;padding:5px 0}
+.club-home-v2 .club-home-bottom-banner{border-radius:13px;background:linear-gradient(130deg,#006e49,#10a369 50%,#078351);color:#fff;text-align:center;padding:16px 12px;margin:14px 0;font-size:19px;font-weight:900}
+.club-home-v2 .club-home-bottom-banner span{display:block;color:#ffe15e;font-size:13px;margin-top:3px}
+@media(max-width:355px){.club-home-v2 .club-home-shortcuts{gap:5px}.club-home-v2 .club-home-shortcut{font-size:11px}.club-home-v2 .club-home-banner strong{font-size:19px}}
+</style>
+<script>
+(function(){
+const oldShow=show,oldDraw=draw;
+const navs=[['members','👥','সদস্যগণ'],['notices','📣','নোটিশ'],['events','🗓️','কার্যক্রম'],['gallery','🖼️','গ্যালারি'],['accounts','📑','রিপোর্ট'],['donations','💝','ডোনেশন'],['contact','💬','যোগাযোগ'],['advisors','🎓','উপদেষ্টা'],['founders','🏅','প্রতিষ্ঠাতা'],['committee','📋','কমিটি'],['admin','⚙️','অ্যাডমিন']];
+function textNode(tag,content,cls){const n=document.createElement(tag);n.textContent=content;if(cls)n.className=cls;return n}
+function home(){
+ if(page!=='home')return;
+ const s=el('screen');if(!s)return;
+ s.className='club-home-v2';s.replaceChildren();
+ const head=document.querySelector('header');
+ if(head&&!head.querySelector('.club-head-bell')){const bell=document.createElement('button');bell.className='club-head-bell';bell.textContent='🔔';bell.title='নোটিশ দেখুন';bell.onclick=()=>show('notices');head.appendChild(bell)}
+ const banner=document.createElement('div');banner.className='club-home-banner';
+ const slogan=document.createElement('strong');slogan.append('সাথে আছি, পাশে আছি');slogan.appendChild(document.createElement('br'));const line=document.createElement('em');line.textContent='সমাজের জন্য কাজ করি';slogan.appendChild(line);banner.appendChild(slogan);banner.appendChild(textNode('span','⚽','club-home-ball'));s.appendChild(banner);
+ const grid=document.createElement('div');grid.className='club-home-shortcuts';
+ navs.forEach(([key,ico,label])=>{const b=document.createElement('button');b.className='club-home-shortcut';const symbol=textNode('span',ico,'ico');b.append(symbol,textNode('span',label));b.onclick=()=>show(key);grid.appendChild(b)});
+ s.appendChild(grid);
+ const title=document.createElement('div');title.className='club-news-title';title.appendChild(textNode('span','⭐ সর্বশেষ সংবাদ'));const all=document.createElement('button');all.textContent='সব দেখুন ›';all.onclick=()=>show('notices');title.appendChild(all);s.appendChild(title);
+ const news=window.clubDirectoryItems?.('notices')||[];
+ const recent=[...news].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,3);
+ if(recent.length)recent.forEach(x=>{const card=document.createElement('div');card.className='club-news-card';if(x.photo&&/^data:image\/(png|jpeg|webp);base64,/.test(x.photo)){const image=document.createElement('img');image.src=x.photo;image.alt='সংবাদের ছবি';card.appendChild(image)}const body=document.createElement('div');body.appendChild(textNode('h3',x.title||'নতুন সংবাদ'));body.appendChild(textNode('p',x.date||''));const more=document.createElement('button');more.textContent='বিস্তারিত দেখুন ›';more.onclick=()=>show('notices');body.appendChild(more);card.appendChild(body);s.appendChild(card)});
+ else{const empty=document.createElement('div');empty.className='club-news-card';empty.appendChild(textNode('p','ক্লাবের নতুন সংবাদ প্রকাশিত হলে এখানে দেখা যাবে।'));s.appendChild(empty)}
+ const foot=document.createElement('div');foot.className='club-home-bottom-banner';foot.appendChild(textNode('div','খেলাধুলা গড়বে মেধাবী ও সুস্থ সমাজ'));foot.appendChild(textNode('span','ঐক্য • খেলাধুলা • সমাজসেবা'));s.appendChild(foot);
+}
+show=function(k){oldShow(k);if(k==='home')home();else el('screen')?.classList.remove('club-home-v2')};
+draw=function(){oldDraw();if(page==='home')home()};
+const oldRefresh=window.clubRefresh;
+if(typeof oldRefresh==='function')window.clubRefresh=async function(){await oldRefresh();if(page==='home')home()};
+home();
+})();
 </script></body></html>
