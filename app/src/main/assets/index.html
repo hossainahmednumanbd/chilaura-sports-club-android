@@ -614,4 +614,63 @@ function article(x){
 show=function(k){oldShow(k);if(k==='notices')notices()};
 draw=function(){oldDraw();if(page==='notices'&&el('cloudRows'))notices()};
 })();
+</script><style>
+.club-pay-hero,.club-contact-hero{background:linear-gradient(125deg,#065d42,#087e65);color:white;padding:22px;border-radius:18px;margin:8px 0 15px}.club-pay-hero h2,.club-contact-hero h2{color:white;margin:0 0 5px}.club-pay-hero p,.club-contact-hero p{color:#d8f3e8;margin:0}.club-pay-method{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #dcebe3;border-radius:14px;padding:17px;margin:12px 0}.club-pay-icon{width:51px;height:51px;border-radius:14px;display:grid;place-items:center;font-size:24px;color:#fff;flex-shrink:0}.club-pay-text{flex:1;min-width:0}.club-pay-text b{display:block}.club-pay-text small{display:block;color:#678174;margin-top:5px;overflow-wrap:anywhere}.club-pay-method button{background:#087647;border:0;color:white;border-radius:8px;padding:9px}.club-pay-form{background:#fff;border:1px solid #dcebe3;padding:16px;border-radius:15px;margin:15px 0}.club-pay-form label{display:block;margin:10px 0;font-weight:650}.club-contact-row{display:flex;align-items:center;gap:13px;background:white;border-bottom:1px solid #e1ebe5;padding:18px 12px}.club-contact-row i{font-style:normal;font-size:23px;width:39px}.club-contact-row div{flex:1;min-width:0}.club-contact-row b{display:block}.club-contact-row small{color:#647d6e;overflow-wrap:anywhere}.club-contact-row a{background:#e4f4e9;color:#09643d;border-radius:8px;padding:8px;text-decoration:none}.club-member-public{background:#fff;border:1px solid #dce9df;border-radius:16px;overflow:hidden;margin:10px 0}.club-member-banner{height:78px;background:linear-gradient(110deg,#0b5d44,#188c64)}.club-member-photo{width:112px;height:112px;object-fit:cover;border:4px solid white;border-radius:15px;display:block;margin:-48px auto 8px;position:relative;box-shadow:0 4px 14px #0002}.club-member-public h2{text-align:center;margin:8px}.club-member-data{padding:12px 20px 18px}.club-member-data p{border-bottom:1px solid #e4eee7;padding:10px 0;margin:0;overflow-wrap:anywhere}.club-member-data strong{color:#0c6240}.club-member-action{display:block;background:#076b46;color:white;text-align:center;border:0;border-radius:9px;padding:12px;margin:12px auto;width:90%}
+</style>
+<script>
+(function(){
+const ses=window.clubSession;
+const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let config=[];
+async function reload(){try{const r=await ses.request('/rest/v1/club_content?section=eq.settings&select=id,payload&limit=100');config=Array.isArray(r)?r:[]}catch(e){config=[]}}
+function value(key){return config.find(x=>x.payload?.key===key)?.payload||{}}
+function wrap(title,subtitle,cls){const s=el('screen');s.innerHTML='';const head=document.createElement('div');head.className=cls;const h=document.createElement('h2');h.textContent=title;const p=document.createElement('p');p.textContent=subtitle;head.append(h,p);s.appendChild(head);return s}
+function item(parent,icon,label,detail,href){
+ const r=document.createElement('div');r.className='club-contact-row';
+ const i=document.createElement('i');i.textContent=icon;const body=document.createElement('div');const b=document.createElement('b');b.textContent=label;const sm=document.createElement('small');sm.textContent=detail||'এখনো যুক্ত হয়নি';body.append(b,sm);r.append(i,body);
+ if(href){const a=document.createElement('a');a.href=href;a.textContent='খুলুন ↗';a.target='_blank';a.rel='noopener noreferrer';r.appendChild(a)}parent.appendChild(r)
+}
+function contact(){
+ const s=wrap('☎ যোগাযোগ','সহজে ক্লাব কর্তৃপক্ষের সঙ্গে যোগাযোগ করুন','club-contact-hero');const c=value('contact');
+ const tel=String(c.phone||'').replace(/[^0-9+]/g,'');
+ item(s,'📞','মোবাইল / WhatsApp',tel,tel?'tel:'+tel:null);
+ item(s,'✉️','ইমেইল',c.email,c.email?'mailto:'+c.email:null);
+ item(s,'📍','ঠিকানা',c.address);
+ item(s,'🕘','অফিস সময়',c.hours);
+ [['📘','Facebook',c.facebook],['▶️','YouTube',c.youtube],['🟢','WhatsApp',c.whatsapp],['𝕏','Twitter (X)',c.twitter],['📍','Google Maps',c.map]].forEach(([ic,n,u])=>item(s,ic,n,u,/^https:\/\//.test(u||'')?u:null));
+ if(ses.staff()){const b=document.createElement('button');b.className='btn';b.textContent='⚙️ যোগাযোগের তথ্য পরিবর্তন';b.onclick=()=>editor('contact');s.appendChild(b)}
+}
+function donation(){
+ const s=wrap('💗 অনলাইন ডোনেশন','আপনার সহযোগিতায় এগিয়ে যাবে ক্লাবের সমাজসেবামূলক কার্যক্রম','club-pay-hero');
+ const c=value('payments');
+ [['bkash','বিকাশ','💗','#d91568'],['nagad','নগদ','🟠','#f16c22'],['bank','ব্যাংক ট্রান্সফার','🏦','#156ba0']].forEach(([key,label,icon,color])=>{
+ const m=c[key]||{};const number=key==='bank'?([m.bankName,m.accountName,m.accountNumber,m.branch,m.routing].filter(Boolean).join(' • ')):m.number;
+ const row=document.createElement('div');row.className='club-pay-method';const ico=document.createElement('div');ico.className='club-pay-icon';ico.style.background=color;ico.textContent=icon;const t=document.createElement('div');t.className='club-pay-text';const b=document.createElement('b');b.textContent=label;const d=document.createElement('small');d.textContent=number||'নম্বর এখনো যুক্ত হয়নি';t.append(b,d);row.append(ico,t);
+ if(number){const copy=document.createElement('button');copy.textContent='কপি';copy.onclick=()=>{const v=key==='bank'?m.accountNumber:m.number;const f=document.createElement('textarea');f.value=v||'';document.body.appendChild(f);f.select();document.execCommand('copy');f.remove();alert('নম্বর কপি হয়েছে')};row.appendChild(copy)}s.appendChild(row)
+ });
+ const help=document.createElement('div');help.className='card';help.innerHTML='<b>অনুদান পাঠানোর নিয়ম</b><p class="muted">অনুমোদিত নম্বর বা ব্যাংক অ্যাকাউন্ট যাচাই করে টাকা পাঠান। প্রয়োজনে ট্রানজ্যাকশন আইডি ক্লাব কর্তৃপক্ষকে জানান। এখানে স্বয়ংক্রিয় পেমেন্ট বা যাচাই চালু নেই।</p>';s.appendChild(help);
+ if(ses.staff()){const b=document.createElement('button');b.className='btn';b.textContent='⚙️ বিকাশ, নগদ ও ব্যাংকের তথ্য পরিবর্তন';b.onclick=()=>editor('payments');s.appendChild(b)}
+ const title=document.createElement('h2');title.textContent='🤝 আমাদের ডোনারগণ';s.appendChild(title);
+ const all=window.clubDirectoryItems?.('donations')||[];
+ all.forEach(x=>{const row=document.createElement('div');row.className='club-person-row';const img=document.createElement('img');img.className='club-avatar';img.src=x.photo||'';const t=document.createElement('div');t.className='club-person-text';const b=document.createElement('b');b.textContent=x.title||'';const sm=document.createElement('small');sm.textContent=[x.role,x.country].filter(Boolean).join(' • ');t.append(b,sm);row.append(img,t);s.appendChild(row)});
+ if(ses.staff()){const add=document.createElement('button');add.className='btn alt';add.textContent='+ ডোনার যোগ করুন';add.onclick=()=>clubEdit('donations',null);s.appendChild(add)}
+}
+function editor(kind){
+ if(!ses.staff())return;const old=value(kind),s=wrap(kind==='contact'?'যোগাযোগের তথ্য সম্পাদনা':'অনুদান গ্রহণের তথ্য','শুধু অনুমোদিত অ্যাডমিন পরিবর্তন করতে পারবেন','club-contact-hero');
+ const fields=kind==='contact'?[['phone','মোবাইল নম্বর'],['email','ইমেইল'],['address','ঠিকানা'],['hours','অফিস সময়'],['facebook','Facebook URL'],['youtube','YouTube URL'],['whatsapp','WhatsApp URL'],['twitter','Twitter (X) URL'],['map','Google Maps URL']]:[['bkash.number','বিকাশ নম্বর'],['nagad.number','নগদ নম্বর'],['bank.bankName','ব্যাংকের নাম'],['bank.accountName','অ্যাকাউন্টের নাম'],['bank.accountNumber','অ্যাকাউন্ট নম্বর'],['bank.branch','শাখা'],['bank.routing','রাউটিং নম্বর']];
+ const form=document.createElement('form');form.className='club-pay-form';
+ fields.forEach(([key,label])=>{const l=document.createElement('label');l.textContent=label;const i=document.createElement('input');i.name=key;i.value=key.split('.').reduce((a,b)=>a?.[b],old)||'';l.appendChild(i);form.appendChild(l)});
+ const save=document.createElement('button');save.className='btn';save.textContent='অনলাইনে সংরক্ষণ';save.type='submit';form.appendChild(save);const cancel=document.createElement('button');cancel.className='btn alt';cancel.type='button';cancel.textContent='বাতিল';cancel.onclick=()=>show(kind==='contact'?'contact':'donations');form.appendChild(cancel);s.appendChild(form);
+ form.onsubmit=async e=>{e.preventDefault();save.disabled=true;try{const payload={key:kind};for(const [key] of fields){const val=form.elements.namedItem(key).value.trim();const path=key.split('.');if(path.length===1)payload[key]=val;else{payload[path[0]]??={};payload[path[0]][path[1]]=val}}
+ const existing=config.find(x=>x.payload?.key===kind);if(existing)await ses.request('/rest/v1/club_content?id=eq.'+existing.id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({payload})});else await ses.request('/rest/v1/club_content',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({section:'settings',payload})});await reload();show(kind==='contact'?'contact':'donations')}catch(err){alert('সংরক্ষণ হয়নি: '+err.message)}finally{save.disabled=false}};
+}
+const oldShow=show;
+show=function(k){if(k==='contact'){page=k;el('moreMenu').hidden=true;contact();updateNav();window.scrollTo(0,0);return}oldShow(k);if(k==='donations')donation()};
+const oldDraw=draw;
+draw=function(){oldDraw();if(page==='donations')donation();if(page==='contact')contact()};
+const oldRefresh=window.clubRefresh;
+window.clubRefresh=async function(){await oldRefresh();await reload();if(page==='donations')donation();if(page==='contact')contact()};
+const menu=el('moreMenu')?.querySelector('.grid');if(menu){const tile=document.createElement('div');tile.className='tile';tile.innerHTML='<i>☎️</i>যোগাযোগ';tile.onclick=()=>show('contact');menu.appendChild(tile)}
+reload().then(()=>{if(page==='donations')donation()});
+})();
 </script></body></html>
