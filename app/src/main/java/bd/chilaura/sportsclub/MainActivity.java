@@ -11,6 +11,9 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebResourceRequest;
+import android.net.Uri;
+import android.content.ActivityNotFoundException;
 
 public class MainActivity extends Activity {
     private static final int FILE_PICKER_REQUEST = 1107;
@@ -20,7 +23,28 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WebView web = new WebView(this);
-        web.setWebViewClient(new WebViewClient());
+        web.setWebViewClient(new WebViewClient() {
+            private boolean openExternal(Uri uri) {
+                String scheme = uri.getScheme();
+                if (scheme == null) return false;
+                if (!scheme.equalsIgnoreCase("tel") && !scheme.equalsIgnoreCase("mailto")
+                        && !scheme.equalsIgnoreCase("sms") && !scheme.equalsIgnoreCase("smsto")) return false;
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                    if (scheme.equalsIgnoreCase("tel")) intent.setAction(Intent.ACTION_DIAL);
+                    startActivity(intent);
+                } catch (ActivityNotFoundException ex) {
+                    android.widget.Toast.makeText(MainActivity.this, "এই কাজের জন্য উপযুক্ত অ্যাপ পাওয়া যায়নি", android.widget.Toast.LENGTH_LONG).show();
+                }
+                return true;
+            }
+            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                return openExternal(request.getUrl());
+            }
+            @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                return openExternal(Uri.parse(url));
+            }
+        });
         web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(true);
         web.getSettings().setAllowFileAccess(true);
