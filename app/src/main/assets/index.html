@@ -498,11 +498,11 @@ function paint(k){
 function profile(k,x){
  const screen=el('screen');screen.replaceChildren();
  const back=document.createElement('button');back.className='btn alt';back.textContent='← তালিকায় ফিরুন';back.onclick=()=>show(k);screen.appendChild(back);
- const head=document.createElement('div');head.className='club-profile';
- const picture=document.createElement('img');picture.className=isPerson(k)?'club-profile-avatar':'club-profile-banner';picture.src=img(x)||avatar;picture.alt='ছবি';head.appendChild(picture);
+ const head=document.createElement('div');head.className=k==='members'?'club-member-public':'club-profile';if(k==='members'){const banner=document.createElement('div');banner.className='club-member-banner';head.appendChild(banner)}
+ const picture=document.createElement('img');picture.className=k==='members'?'club-member-photo':isPerson(k)?'club-profile-avatar':'club-profile-banner';picture.src=img(x)||avatar;picture.alt='ছবি';head.appendChild(picture);
  const name=document.createElement('h2');name.textContent=x.title||'';head.appendChild(name);screen.appendChild(head);
- const card=document.createElement('div');card.className='card';
- [['পদবি',x.role],['দেশ',x.country],['তারিখ',x.date],['বিভাগ',x.category],['অবস্থা',x.status],['ঠিকানা',x.address],['সদস্যের ধরন',x.memberType],['মোবাইল',S.staff()?x.phone:null],['ইমেইল',x.showEmail?x.email:null],['পরিমাণ',x.amount!==undefined?'৳ '+x.amount:null]].forEach(([label,value])=>{if(value===undefined||value===null||value==='')return;const line=document.createElement('div');line.className='club-profile-line';const a=document.createElement('b');a.textContent=label;const b=document.createElement('span');b.textContent=value;line.append(a,b);card.appendChild(line)});
+ const card=document.createElement('div');card.className=k==='members'?'club-member-data card':'card';
+ [['পদবি',x.role],['বর্তমান ঠিকানা',x.address||x.country],['তারিখ',x.date],['বিভাগ',x.category],['অবস্থা',x.status],['ঠিকানা',x.address],['সদস্যের ধরন',x.memberType],['মোবাইল',S.staff()?x.phone:null],['ইমেইল',x.showEmail?x.email:null],['পরিমাণ',x.amount!==undefined?'৳ '+x.amount:null]].forEach(([label,value])=>{if(value===undefined||value===null||value==='')return;const line=document.createElement('div');line.className='club-profile-line';const a=document.createElement('b');a.textContent=label;const b=document.createElement('span');b.textContent=value;line.append(a,b);card.appendChild(line)});
  const desc=document.createElement('p');desc.className='desc';desc.textContent=x.detail||'';card.appendChild(desc);screen.appendChild(card);
  if(k==='members'){const social=document.createElement('div');social.className='club-social-links';[['ফেসবুক',x.facebook],['হোয়াটসঅ্যাপ',x.whatsapp],['সোশ্যাল মিডিয়া',x.social]].forEach(([label,url])=>{if(!url||!/^https:\/\//i.test(url))return;const a=document.createElement('a');a.textContent=label+' ↗';a.href=url;a.target='_blank';a.rel='noopener noreferrer';social.appendChild(a)});screen.appendChild(social)}
 
